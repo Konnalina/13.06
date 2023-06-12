@@ -1,0 +1,60 @@
+!pip install pyconll
+import pyconll
+import re
+
+def reader(path):
+    '''чтение файла с разметкой'''
+    count = 1
+    conllu = {}
+    with open (path, 'r', encoding='utf8') as file:
+        sent = []
+        text = ''
+        sentno = 0
+        for line in file:
+            if line.isspace() or line == '\n':
+              if sent:
+                    conllu[count] = sent
+                    sent = []
+                    text = ''
+                    count += 1
+              continue 
+            elif not re.match(r'\d+', line):
+              print(count, text, line)
+            token = line.split('\t')
+            if token[1] not in '.,"„“':
+              text += ' ' + token[1]
+              sent.append(token[-2:])
+    if sent:
+        conllu[count] = sent
+    return conllu
+    
+original = reader('cspred исходник.conllu')
+label = reader('чешская разметка для курсовой 1.conllu')
+
+from collections import defaultdict, Counter 
+
+gps = defaultdict(Counter)
+
+for key in original:
+  for j in range(len(original[key])):
+    if original[key][j][0] != label[key][j][0]:
+      gps[original[key][j][0]][label[key][j][0]] += 1
+
+for key, value in gps.items():
+  print(key)
+  for k, v in value.items():
+    print(k, v)
+  print()
+  
+  sks = defaultdict(Counter)
+
+for key in original:
+  for j in range(len(original[key])):
+    if original[key][j][1] != label[key][j][1]:
+      sks[original[key][j][1]][label[key][j][1]] += 1
+
+for key, value in sks.items():
+  print(key)
+  for k, v in value.items():
+    print(k, v)
+  print()
