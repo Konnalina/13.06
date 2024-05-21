@@ -1,0 +1,60 @@
+!pip install pyconll
+import pyconll
+import re
+
+def reader(path):
+    '''чтение файла с разметкой'''
+    count = 1
+    conllu = {}
+    with open (path, 'r', encoding='utf8') as file:
+        sent = {'text': '', 'tokens': []}
+        for line in file:
+            if line.isspace() or line == '\n':
+              if sent:
+                    conllu[count] = sent
+                    sent = {'text': '', 'tokens': []}
+                    count += 1
+              continue
+            elif not re.match(r'\d+', line):
+              print(count, text, line)
+            token = [x.strip() for x in line.split('\t')]
+            if token[3] != 'PUNCT' and token[1] not in ".,!?\"':;“”":
+              sent['text'] += ' ' + token[1]
+              sent['tokens'].append(token[-2:])
+    if sent:
+        conllu[count] = sent
+    return conllu
+
+original = reader('cspred исход.conllu')
+label = reader('для диплома и пратики.conllu')
+
+from collections import defaultdict, Counter
+
+gps = Counter()
+sks = Counter()
+
+for sentnumber in original:
+  for j in range(len(original[sentnumber]['tokens'])):
+    try:
+      if original[sentnumber]['tokens'][j][0] != label[sentnumber]['tokens'][j][0]:
+        pair = (original[sentnumber]['tokens'][j][0], label[sentnumber]['tokens'][j][0])
+        gps[pair] += 1
+      if original[sentnumber]['tokens'][j][1] != label[sentnumber]['tokens'][j][1]:
+        pair = (original[sentnumber]['tokens'][j][1], label[sentnumber]['tokens'][j][1])
+        sks[pair] += 1
+    except IndexError:
+      print(original[sentnumber]['text'])
+      print(f"Длина исходного: {len(original[sentnumber]['tokens'])}, длина размеченного: {len(label[sentnumber]['tokens'])}")
+      continue
+
+print('ГЛУБИННЫЕ ПОЗИЦИИ')
+for key, value in sorted(gps.items(), key=lambda x: -x[1]):
+  print(f"{key[0]} => {key[1]}: {value}")
+
+print()
+
+print('СЕМАНТИЧЕСКИЕ КЛАССЫ')
+for key, value in sorted(sks.items(), key=lambda x: -x[1]):
+  print(f"{key[0]} => {key[1]}: {value}")
+
+print()
